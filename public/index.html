@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zarzis Portes · Shared Room</title>
+  <link rel="icon" type="image/png" href="/logoz.png">
+  <link rel="stylesheet" href="/css/style.css">
+
+  <!-- ============ PWA Manifest & App Icon Links ============ -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <meta name="theme-color" content="#1976d2">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+</head>
+<body>
+
+  <!-- ============ Sign-in ============ -->
+  <main id="view-login" class="login hidden">
+    <div class="login-card">
+      <div class="door" role="img" aria-label="Zarzis Portes Logo" style="background-image: url('/logoz.png'); background-size: cover; background-position: center; background-repeat: no-repeat; margin: 0 auto;"></div>
+      <h1>Zarzis Portes</h1>
+      <p class="tagline">Shared Room — drop a file, everyone sees it.</p>
+
+      <div id="login-error" class="notice error hidden" role="alert"></div>
+
+      <a id="google-btn" class="google-btn" href="/auth/google">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        <span>Sign in with Google</span>
+      </a>
+      <p class="fine">Use your usual Gmail account.</p>
+    </div>
+  </main>
+
+  <!-- ============ The Shared Room ============ -->
+  <div id="view-app" class="hidden">
+    <header class="topbar">
+      <div class="brand">
+        <div aria-hidden="true" style="background-image: url('/logoz.png'); background-size: cover; background-position: center; background-repeat: no-repeat; width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0;"></div>
+        <div>
+          <strong>Zarzis Portes</strong>
+          <span>Shared Room</span>
+        </div>
+      </div>
+      <div class="who">
+        <img id="avatar" class="avatar" alt="" referrerpolicy="no-referrer">
+        <div class="who-text">
+          <strong id="who-nick"></strong>
+          <span id="who-email"></span>
+        </div>
+        <button id="btn-rename" class="btn small ghost" type="button">Change nickname</button>
+        <button id="btn-logout" class="btn small ghost" type="button">Sign out</button>
+      </div>
+    </header>
+
+    <div class="layout" id="layout">
+      <!-- LEFT: who am I, and who is in the room -->
+      <aside class="sidebar" id="sidebar">
+        <section class="side-card" id="me-card"></section>
+        <section class="side-card">
+          <div class="side-head">
+            <h2>People in the room</h2>
+            <button id="btn-admin" class="btn small hidden" type="button">Manage roles</button>
+          </div>
+          <div id="members" class="members"></div>
+        </section>
+        <section class="side-card chat" id="chat-card">
+          <div class="side-head"><h2>Room chat</h2></div>
+          <div id="chat-list" class="chat-list" aria-live="polite"></div>
+          <form id="chat-form" class="chat-form" autocomplete="off">
+            <textarea id="chat-input" rows="2" maxlength="1000" placeholder="Message… (Enter = send)" aria-label="Message"></textarea>
+            <button class="btn small" type="submit">Send</button>
+          </form>
+        </section>
+      </aside>
+
+      <!-- MIDDLE: files and scoreboard -->
+      <main class="center" id="center">
+        <section id="dropzone" class="dropzone" tabindex="0">
+          <div class="dz-row">
+            <div class="dz-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+            </div>
+            <div class="dz-text">
+              <h2>Drop your files here</h2>
+              <p>Same name = the old file is replaced for everyone.</p>
+            </div>
+          </div>
+          <div class="dz-buttons">
+            <button id="btn-choose" class="btn big" type="button">Choose files…</button>
+            <button id="btn-new" class="btn big ghost" type="button">+ New file</button>
+          </div>
+          <input id="file-input" type="file" multiple hidden>
+        </section>
+
+        <div id="readonly-note" class="notice info hidden">Your role cannot add or change files — ask the Chief of the room if you need that.</div>
+
+        <ul id="upload-list" class="upload-list"></ul>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Files <span id="file-count" class="count"></span></h2>
+            <div class="head-actions">
+              <button id="btn-trash" class="btn small ghost hidden" type="button">🗑 Trash</button>
+              <input id="search" class="search" type="search" placeholder="Search files…" autocomplete="off">
+            </div>
+          </div>
+          <div id="files-empty" class="empty hidden">No files yet — drop the first one above.</div>
+          <ul id="files" class="files"></ul>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Scoreboard <span class="sub">who did what, and when</span></h2>
+            <div class="head-actions">
+              <span class="live" title="Refreshes automatically"><i></i> Live</span>
+              <a class="btn small ghost" href="/api/activity.csv">Export CSV</a>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="board">
+              <thead>
+                <tr><th>When</th><th>Who</th><th>What</th></tr>
+              </thead>
+              <tbody id="board"></tbody>
+            </table>
+          </div>
+          <div id="board-empty" class="empty hidden">Nothing has happened yet.</div>
+          <div class="more"><button id="btn-more" class="btn ghost hidden" type="button">Show older activity</button></div>
+        </section>
+      </main>
+
+      <!-- RIGHT: editor -->
+      <section class="editor-pane" id="editor-pane">
+        <div id="editor-empty" class="editor-empty">
+          <svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 14l1.2 1.2L14 11.4"/></svg>
+          <h2>Editor</h2>
+          <p>Press <b>Edit</b> next to an Excel, Word or text file to work on it here. Changes are saved into the shared file for everyone.</p>
+        </div>
+        <div id="editor" class="editor hidden">
+          <div class="ed-head">
+            <div class="ed-title"><strong id="ed-name"></strong><span id="ed-status" class="ed-status"></span></div>
+            <div class="ed-actions">
+              <button id="ed-save" class="btn small" type="button">Save</button>
+              <a id="ed-download" class="btn small ghost hidden" href="#">Download</a>
+              <button id="ed-close" class="btn small ghost" type="button">Close</button>
+            </div>
+          </div>
+          <div id="ed-banner" class="ed-banner hidden"></div>
+          <div id="ed-body" class="ed-body"></div>
+        </div>
+      </section>
+    </div>
+
+    <div id="drop-overlay" class="drop-overlay hidden"><div>Drop to upload</div></div>
+  </div>
+
+  <!-- ============ Dialogs ============ -->
+  <dialog id="nick-dialog" class="dialog">
+    <form id="nick-form" method="dialog">
+      <h2 id="nick-title">Welcome! What should we call you?</h2>
+      <p id="nick-help">Pick a nickname your colleagues will recognise, like <em>“Maria”</em> or <em>“John from Accounting”</em>. It shows next to everything you upload or delete.</p>
+      <input id="nick-input" class="text-input" type="text" maxlength="40" minlength="2" placeholder="Your nickname" autocomplete="off" required>
+      <div id="nick-error" class="notice error hidden"></div>
+      <div class="dialog-actions">
+        <button id="nick-cancel" class="btn ghost hidden" type="button">Cancel</button>
+        <button id="nick-save" class="btn big" type="submit">Save and continue</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="confirm-dialog" class="dialog">
+    <h2>Delete this file?</h2>
+    <p><strong id="confirm-name"></strong> will disappear for everyone, but it goes to the <b>Trash</b> and can be restored from there.</p>
+    <div class="dialog-actions">
+      <button id="confirm-no" class="btn ghost" type="button">Keep it</button>
+      <button id="confirm-yes" class="btn danger" type="button">Yes, delete</button>
+    </div>
+  </dialog>
+
+  <dialog id="rename-dialog" class="dialog">
+    <h2>Rename file</h2>
+    <p>Everyone will see the new name. The file itself does not change.</p>
+    <input id="rename-name" class="text-input" type="text" maxlength="150" autocomplete="off">
+    <div id="rename-error" class="notice error hidden"></div>
+    <div class="dialog-actions">
+      <button id="rename-cancel" class="btn ghost" type="button">Cancel</button>
+      <button id="rename-save" class="btn" type="button">Rename</button>
+    </div>
+  </dialog>
+
+  <dialog id="trash-dialog" class="dialog wide">
+    <div class="preview-head">
+      <strong>🗑 Trash</strong>
+      <button id="trash-close" class="btn small ghost" type="button">Close</button>
+    </div>
+    <p id="trash-note" class="trash-note"></p>
+    <div id="trash-empty" class="empty hidden">The trash is empty.</div>
+    <ul id="trash-list" class="files trash-list"></ul>
+  </dialog>
+
+  <dialog id="new-dialog" class="dialog">
+    <h2>New file</h2>
+    <p>Create an empty file that everyone in the room can open and edit.</p>
+    <div class="kind-picker" id="new-kinds">
+      <label class="kind"><input type="radio" name="newkind" value="sheet" checked><span><b>Spreadsheet</b><small>.xlsx · 3 tabs</small></span></label>
+      <label class="kind"><input type="radio" name="newkind" value="docx"><span><b>Word document</b><small>.docx</small></span></label>
+      <label class="kind"><input type="radio" name="newkind" value="text"><span><b>Text file</b><small>.txt</small></span></label>
+    </div>
+    <input id="new-name" class="text-input" type="text" maxlength="100" placeholder="File name, e.g. Budget 2027" autocomplete="off">
+    <div id="new-error" class="notice error hidden"></div>
+    <div class="dialog-actions">
+      <button id="new-cancel" class="btn ghost" type="button">Cancel</button>
+      <button id="new-create" class="btn" type="button">Create</button>
+    </div>
+  </dialog>
+
+  <dialog id="assign-dialog" class="dialog">
+    <h2 id="assign-title">Roles</h2>
+    <p id="assign-sub"></p>
+    <div id="assign-roles" class="checks stack"></div>
+    <div class="dialog-actions"><button id="assign-close" class="btn" type="button">Done</button></div>
+  </dialog>
+
+  <dialog id="access-dialog" class="dialog">
+    <h2>Who can edit this file?</h2>
+    <p><strong id="access-name"></strong></p>
+    <p>Tick the roles that may <b>replace or delete</b> this file. Only they (and the Chief) will be able to. Everyone can still view and download it. Leave everything unticked to use the normal permissions.</p>
+    <div id="access-roles" class="checks"></div>
+    <div id="access-none" class="notice info hidden">There are no custom roles yet. Create one under “Manage roles”.</div>
+    <div class="dialog-actions">
+      <button id="access-cancel" class="btn ghost" type="button">Cancel</button>
+      <button id="access-save" class="btn" type="button">Save</button>
+    </div>
+  </dialog>
+
+  <dialog id="admin-dialog" class="dialog wide">
+    <div class="preview-head">
+      <strong>Roles and people</strong>
+      <button id="admin-close" class="btn small ghost" type="button">Close</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" type="button" data-tab="members">People</button>
+      <button class="tab" type="button" data-tab="roles">Roles</button>
+    </div>
+    <div id="admin-body" class="admin-body"></div>
+  </dialog>
+
+  <dialog id="preview-dialog" class="dialog preview">
+    <div class="preview-head">
+      <strong id="preview-title"></strong>
+      <div>
+        <a id="preview-download" class="btn small" href="#">Download</a>
+        <button id="preview-close" class="btn small ghost" type="button">Close</button>
+      </div>
+    </div>
+    <div id="preview-body" class="preview-body"></div>
+  </dialog>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <script src="/js/util.js"></script>
+  <script src="/js/formula.js"></script>
+  <script src="/js/textedit.js"></script>
+  <script src="/js/docxedit.js"></script>
+  <script src="/js/sheet.js"></script>
+  <script src="/js/editor.js"></script>
+  <script src="/js/admin.js"></script>
+  <script src="/js/members.js"></script>
+  <script src="/js/chat.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "zarzis-portes-share",
+  "version": "1.0.0",
+  "description": "Local-network shared file room with Google sign-in and an audit trail for Zarzis Portes",
+  "main": "server.js",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/basic.test.js && node test/formula.test.js && node test/office.test.js"
+  },
+  "dependencies": {
+    "cookie-session": "^2.1.1",
+    "express": "^4.22.3",
+    "jszip": "3.10.1",
+    "selfsigned": "2.4.1"
+  }
+}
