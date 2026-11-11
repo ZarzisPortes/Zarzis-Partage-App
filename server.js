@@ -172,11 +172,10 @@ function publicFile(f, ctx) {
 const app = express();
 app.disable('x-powered-by');
 
-// Everyone must use the one official address, otherwise Google sign-in cookies
-// would get lost between "ip-address" and "name" versions of the site.
+// Flexible host check allowing Render proxy headers or matching configured base host
 app.use((req, res, next) => {
-  const host = String(req.headers.host || '').toLowerCase();
-  if (!host || host === config.BASE_HOST) return next();
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').toLowerCase();
+  if (!host || host.includes('onrender.com') || host === config.BASE_HOST || host.startsWith('localhost')) return next();
   if (req.method === 'GET' || req.method === 'HEAD') return res.redirect(302, config.BASE_URL + req.originalUrl);
   res.status(400).json({ error: 'wrong_address', use: config.BASE_URL });
 });
@@ -806,7 +805,10 @@ function start() {
     process.exit(1);
   });
 
-  server.listen(config.PORT, '0.0.0.0', () => {
+  // Use process.env.PORT provided by Render, fallback to config.PORT
+  const portToListen = process.env.PORT || config.PORT;
+
+  server.listen(portToListen, '0.0.0.0', () => {
     const line = '='.repeat(64);
     console.log('\n' + line);
     console.log(' Zarzis Portes - Shared Room is running');
