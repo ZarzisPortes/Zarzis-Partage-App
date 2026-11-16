@@ -1,0 +1,32 @@
+# Render Blueprint for "Zarzis Portes - Shared Room".
+# NOTE: a persistent disk needs a paid Render plan. Without it every deploy/restart
+# erases the shared files, the user list and the roles (free plans have no persistent disk).
+services:
+  - type: web
+    name: zarzis-portes
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    disk:
+      name: zarzis-data
+      mountPath: /var/data
+      sizeGB: 5
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: DATA_DIR
+        value: /var/data
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: CHIEF_EMAILS
+        sync: false
+      - key: ALLOWED_EMAILS
+        sync: false
+      # BASE_URL is optional on Render: the app uses RENDER_EXTERNAL_URL automatically.
+      # Set it only if you attach your own domain, e.g. https://files.example.com

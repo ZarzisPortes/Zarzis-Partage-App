@@ -71,7 +71,7 @@
     const isNew = !role;
     const builtin = role && role.builtin;
     const name = h('input', { type: 'text', maxlength: '30', placeholder: 'Role name, e.g. Accounting', value: role ? role.name : '', disabled: builtin ? 'disabled' : false });
-    const color = h('input', { type: 'color', value: role ? role.color : '#1d4f91', disabled: builtin ? 'disabled' : false, title: 'Role colour' });
+    const color = h('input', { type: 'color', value: role ? role.color : '#e8b830', disabled: builtin ? 'disabled' : false, title: 'Role colour' });
     const checks = {};
     const permBoxes = Object.entries(PERM_LABELS).map(([key, label]) => {
       const on = role ? role.permissions[key] : key !== 'delete';

@@ -40,7 +40,25 @@ function list(value) {
     .filter(Boolean);
 }
 
-const BASE_URL = String(process.env.BASE_URL || 'http://localhost:3000').replace(/\/+$/, '');
+// ---- Where are we running? On Render (or any host with its own HTTPS proxy in front)
+// the proxy handles HTTPS and talks plain HTTP to this program on $PORT.
+const ON_RENDER = !!(process.env.RENDER || process.env.RENDER_EXTERNAL_URL);
+const BEHIND_PROXY = ON_RENDER || /^(1|true|yes)$/i.test(String(process.env.BEHIND_PROXY || ''));
+
+// The public address people (and Google) use. Order: BASE_URL from the settings,
+// otherwise the *.onrender.com address Render provides, otherwise localhost.
+// On Render a leftover localhost/IP BASE_URL is ignored in favour of Render's address.
+function isLocalAddress(u) {
+  try {
+    const host = new URL(u).hostname;
+    return host === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(host) || host === '::1' || host === '[::1]';
+  } catch (e) {
+    return false;
+  }
+}
+let rawBase = process.env.BASE_URL || '';
+if (process.env.RENDER_EXTERNAL_URL && (!rawBase || isLocalAddress(rawBase))) rawBase = process.env.RENDER_EXTERNAL_URL;
+const BASE_URL = String(rawBase || 'http://localhost:3000').replace(/\/+$/, '');
 let parsed;
 try {
   parsed = new URL(BASE_URL);
@@ -48,8 +66,12 @@ try {
   throw new Error('BASE_URL is not a valid address: ' + BASE_URL);
 }
 
+// useHttps  = the PUBLIC address is https (secure cookies, Google redirect URI).
+// serveTls  = THIS program must speak TLS itself (self-signed certificate). Never behind a proxy.
 const useHttps = parsed.protocol === 'https:';
-const defaultPort = parsed.port ? Number(parsed.port) : useHttps ? 443 : 80;
+const serveTls = useHttps && !BEHIND_PROXY;
+// Port: $PORT wins (Render sets it, 10000 by default); locally it comes from BASE_URL.
+const defaultPort = parsed.port ? Number(parsed.port) : BEHIND_PROXY ? 10000 : useHttps ? 443 : 80;
 const DATA_DIR = path.resolve(ROOT, process.env.DATA_DIR || 'data');
 
 const config = {
@@ -69,6 +91,9 @@ const config = {
   BASE_HOST: parsed.host.toLowerCase(), // includes port unless it is the default one
   BASE_HOSTNAME: parsed.hostname,
   USE_HTTPS: useHttps,
+  SERVE_TLS: serveTls,
+  BEHIND_PROXY,
+  ON_RENDER,
   PORT: Number(process.env.PORT) || defaultPort,
   REDIRECT_URI: BASE_URL + '/auth/google/callback',
 

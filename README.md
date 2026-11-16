@@ -180,6 +180,14 @@ breaks or tracked changes show a 🔒 and are read-only (change those in Word). 
   action and file. **Export CSV** saves the entire history for audits.
 - Folders cannot be uploaded – zip them first.
 
+## Hosting on Render (online instead of a local PC)
+
+1. Push the project to GitHub and create a **Web Service** on Render (or use the included `render.yaml` Blueprint). Build command `npm install`, start command `npm start`, health check path `/healthz`.
+2. Settings (Environment): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `CHIEF_EMAILS`, `ALLOWED_EMAILS`, and a long random `SESSION_SECRET`. Leave `BASE_URL` empty – the app uses Render's own `https://<name>.onrender.com` address automatically (set `BASE_URL` only if you attach your own domain).
+3. In Google Cloud → Credentials, add **`https://<name>.onrender.com/auth/google/callback`** as an authorised redirect URI (the exact address is printed in the Render logs as “Google redirect URI to register”).
+4. On Render the app speaks **plain http** on Render's `PORT`; Render's proxy provides the https. (The self-signed certificate is only used when you run it on your own PC.) If you ever see *502 Bad Gateway*, check that `BASE_URL`/`RENDER_EXTERNAL_URL` is not forcing a local https server – the log line “Mode:” must say *behind a proxy*.
+5. **Storage:** Render's disk is erased on every deploy/restart unless you attach a *persistent disk* (paid plans). Mount it (e.g. `/var/data`) and set `DATA_DIR=/var/data`, otherwise uploaded files, people and roles disappear. Free plans also go to sleep when idle.
+
 ## Where is everything?
 
 ```

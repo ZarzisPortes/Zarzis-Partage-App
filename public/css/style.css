@@ -1,13 +1,15 @@
 :root {
-  --blue: #1d4f91;
-  --blue-dark: #153b6e;
-  --blue-soft: #e8eff8;
-  --gold: #f2b84b;
-  --gold-soft: #fdf3dc;
+  --blue: #083048;
+  --blue-dark: #051f30;
+  --blue-soft: #e6eff4;
+  --gold: #f2c12e;
+  --gold-soft: #fff3c4;
   --ink: #1c2430;
   --muted: #667085;
+  --sky: #90b8c8;
+  --gold-deep: #e8b830;
   --line: #e3e7ee;
-  --bg: #f6f4ef;
+  --bg: #f3f6f8;
   --card: #ffffff;
   --green: #1f8a52;
   --green-soft: #e3f5ea;
@@ -50,7 +52,7 @@ button, input { font: inherit; }
 /* ---------- login ---------- */
 .login { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem;
   background:
-    radial-gradient(900px 500px at 15% -10%, #dfe9f6 0, transparent 60%),
+    radial-gradient(900px 500px at 15% -10%, #cfe2ec 0, transparent 60%),
     radial-gradient(700px 400px at 100% 110%, var(--gold-soft) 0, transparent 60%),
     var(--bg);
 }
@@ -66,7 +68,7 @@ button, input { font: inherit; }
   box-shadow: inset 0 0 0 1.5px #c9cfda, 0 2px 6px rgba(0,0,0,.06);
   transition: box-shadow .15s, background .15s;
 }
-.google-btn:hover { background: #f8faff; box-shadow: inset 0 0 0 1.5px var(--blue), 0 4px 12px rgba(29,79,145,.15); }
+.google-btn:hover { background: #f8faff; box-shadow: inset 0 0 0 1.5px var(--blue), 0 4px 12px rgba(8,48,72,.18); }
 .google-btn svg { width: 26px; height: 26px; }
 .fine { color: var(--muted); font-size: .85rem; margin: 1rem 0 0; }
 
@@ -98,7 +100,7 @@ button, input { font: inherit; }
 .dropzone h2 { font-size: 1.45rem; margin: .4rem 0 .3rem; }
 .dropzone p { color: var(--muted); margin: 0 auto 1.3rem; max-width: 36rem; }
 
-.drop-overlay { position: fixed; inset: 0; background: rgba(29, 79, 145, .78); z-index: 50; display: grid; place-items: center; }
+.drop-overlay { position: fixed; inset: 0; background: rgba(8, 48, 72, .82); z-index: 50; display: grid; place-items: center; }
 .drop-overlay div { color: #fff; font-size: 2rem; font-weight: 700; border: 4px dashed #fff; border-radius: 28px; padding: 3rem 4rem; }
 
 .upload-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
@@ -409,3 +411,71 @@ table.grid tr.spacer td, table.grid tr.spacer th { border: 0; padding: 0; height
 .chat-empty { color: var(--muted); font-size: .88rem; text-align: center; padding: 1.5rem .5rem; }
 .chat-form { display: grid; grid-template-columns: 1fr auto; gap: .4rem; margin-top: .6rem; align-items: end; }
 .chat-form textarea { resize: none; border: 1px solid var(--line); border-radius: 10px; padding: .45rem .6rem; font: inherit; font-size: .9rem; min-width: 0; }
+
+/* =====================================================================
+   Brand: gold, navy and sky blue taken from the Zarzis Portes logo
+   ===================================================================== */
+.door { width: 112px; height: 112px; margin: 0 auto .6rem; display: block; object-fit: contain; filter: drop-shadow(0 10px 14px rgba(8,48,72,.28)); }
+.brand-logo { width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(8,48,72,.25)); transition: transform .35s cubic-bezier(.3,1.6,.5,1); }
+.brand:hover .brand-logo { transform: rotate(-8deg) scale(1.08); }
+.topbar { border-bottom: 3px solid var(--gold); }
+.btn:focus-visible, .google-btn:focus-visible, input:focus-visible, textarea:focus-visible, .sh-tab:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.btn:not(.ghost):not(.danger) { background: var(--blue); color: #fff; }
+.btn:not(.ghost):not(.danger):hover { background: var(--blue-dark); box-shadow: 0 0 0 3px rgba(242,193,46,.45); }
+.btn.ghost { color: var(--blue); }
+.sh-tab.active { box-shadow: inset 0 -3px 0 var(--gold); }
+.dropzone.over, .dropzone:hover { border-color: var(--gold-deep); }
+.badge.Renamed, .badge.Access-changed { background: var(--blue-soft); color: var(--blue); }
+.file.flash { animation: flash 2.5s ease-out; }
+@keyframes flash { 0% { background: var(--gold-soft); box-shadow: inset 4px 0 0 var(--gold); } 100% { background: transparent; box-shadow: inset 4px 0 0 transparent; } }
+.chat-msg.mine { background: var(--gold-soft); }
+.chat-role { background: #fff; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* login: slow drifting light, floating logo */
+  .login { background-size: 140% 140%, 140% 140%, auto; animation: drift 18s ease-in-out infinite alternate; position: relative; overflow: hidden; }
+  @keyframes drift { from { background-position: 0% 0%, 100% 100%, 0 0; } to { background-position: 40% 30%, 60% 70%, 0 0; } }
+  .login::before, .login::after { content: ""; position: absolute; border-radius: 50%; pointer-events: none; filter: blur(2px); }
+  .login::before { width: 340px; height: 340px; left: -90px; bottom: -110px; background: radial-gradient(circle at 30% 30%, #f8e050, var(--gold-deep) 70%); opacity: .55; animation: bob 9s ease-in-out infinite; }
+  .login::after { width: 260px; height: 260px; right: -70px; top: -80px; background: radial-gradient(circle at 30% 30%, var(--sky), var(--blue) 80%); opacity: .35; animation: bob 11s ease-in-out infinite reverse; }
+  @keyframes bob { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(24px, -26px) scale(1.08); } }
+  .login-card { position: relative; z-index: 1; animation: cardIn .7s cubic-bezier(.2,.9,.3,1.2) both; }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(24px) scale(.96); } to { opacity: 1; transform: none; } }
+  .door { animation: logoPop .9s cubic-bezier(.3,1.5,.5,1) .15s both, float 5s ease-in-out 1.1s infinite; }
+  @keyframes logoPop { from { opacity: 0; transform: scale(.4) rotate(-14deg); } to { opacity: 1; transform: none; } }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  .login-card h1 { animation: cardIn .6s ease .35s both; }
+  .tagline, .google-btn, .fine { animation: cardIn .6s ease .5s both; }
+  .google-btn { transition: transform .18s, box-shadow .18s, background .18s; }
+  .google-btn:hover { transform: translateY(-2px); }
+  .google-btn:active { transform: translateY(0) scale(.98); }
+
+  /* app: gold line that shimmers under the top bar, cards rise in, rows slide in */
+  .topbar { background-image: linear-gradient(90deg, transparent 0, rgba(242,193,46,.0) 40%, rgba(242,193,46,.18) 50%, rgba(242,193,46,0) 60%, transparent 100%); background-size: 250% 100%; animation: shimmer 7s linear infinite; }
+  @keyframes shimmer { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+  .brand-logo { animation: logoPop .8s cubic-bezier(.3,1.5,.5,1) both; }
+  .side-card, .center > .card, .dropzone, .editor-pane { animation: cardIn .55s cubic-bezier(.2,.9,.3,1.1) both; }
+  .center > :nth-child(2) { animation-delay: .06s; } .center > :nth-child(3) { animation-delay: .12s; } .center > :nth-child(4) { animation-delay: .18s; }
+  .sidebar > :nth-child(2) { animation-delay: .08s; } .sidebar > :nth-child(3) { animation-delay: .16s; }
+  .editor-pane { animation-delay: .1s; }
+  .files > .file, .chat-msg, .board tr.new { animation: slideIn .4s ease both; }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+  .chat-msg { animation-name: pop; animation-duration: .35s; }
+  @keyframes pop { from { opacity: 0; transform: scale(.92) translateY(6px); } to { opacity: 1; transform: none; } }
+  .btn, .file, .m-row, .sh-tab, .chat-del { transition: transform .16s, box-shadow .16s, background .16s, color .16s; }
+  .btn:not([disabled]):hover { transform: translateY(-1px); }
+  .btn:not([disabled]):active { transform: scale(.96); }
+  .file:hover { transform: translateX(3px); }
+  .m-row.clickable:hover { transform: translateX(3px); }
+  .dot, .m-avatar { transition: transform .2s; }
+  .m-row:hover .m-avatar { transform: scale(1.08); }
+  .dropzone { transition: transform .2s, border-color .2s, background .2s; }
+  .dropzone.over { transform: scale(1.015); background: var(--gold-soft); }
+  .dialog[open] { animation: cardIn .3s cubic-bezier(.2,.9,.3,1.2); }
+  .dialog::backdrop { animation: fade .3s ease; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  .live i { background: var(--gold-deep); animation: pulseGold 2s infinite; }
+  @keyframes pulseGold { 0% { box-shadow: 0 0 0 0 rgba(242,193,46,.7); } 70% { box-shadow: 0 0 0 9px rgba(242,193,46,0); } 100% { box-shadow: 0 0 0 0 rgba(242,193,46,0); } }
+  .badge { animation: pop .35s ease both; }
+  .sh-tab.active { animation: pop .25s ease both; }
+}
