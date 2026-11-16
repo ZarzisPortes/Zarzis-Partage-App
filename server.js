@@ -172,10 +172,19 @@ function publicFile(f, ctx) {
 const app = express();
 app.disable('x-powered-by');
 
-// Flexible host check allowing Render proxy headers or matching configured base host
+// Behind Render's proxy the browser talks https to the proxy and the proxy talks
+// plain http to us. Trusting it lets Express (and the secure session cookie)
+// see the original https request via X-Forwarded-Proto.
+if (config.BEHIND_PROXY) app.set('trust proxy', 1);
+
+// Health check for Render (and anyone else): no sign-in, no redirects, no cookies.
+app.get('/healthz', (req, res) => res.type('text/plain').send('ok'));
+
+// Everyone must use the one official address, otherwise Google sign-in cookies
+// would get lost between "ip-address" and "name" versions of the site.
 app.use((req, res, next) => {
-  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').toLowerCase();
-  if (!host || host.includes('onrender.com') || host === config.BASE_HOST || host.startsWith('localhost')) return next();
+  const host = String(req.headers.host || '').toLowerCase();
+  if (!host || host === config.BASE_HOST) return next();
   if (req.method === 'GET' || req.method === 'HEAD') return res.redirect(302, config.BASE_URL + req.originalUrl);
   res.status(400).json({ error: 'wrong_address', use: config.BASE_URL });
 });
@@ -643,7 +652,7 @@ function readRoleFields(body, existing) {
   if (name.length < 2 || name.length > 30) return { error: 'Role names must be 2 to 30 characters.' };
   const clash = Object.values(db.data.roles).find((r) => r.name.toLowerCase() === name.toLowerCase() && (!existing || r.id !== existing.id));
   if (clash) return { error: 'There is already a role called “' + clash.name + '”.' };
-  const color = /^#[0-9a-f]{6}$/i.test((body && body.color) || '') ? body.color : existing ? existing.color : '#1d4f91';
+  const color = /^#[0-9a-f]{6}$/i.test((body && body.color) || '') ? body.color : existing ? existing.color : '#e8b830';
   const permissions = perms.cleanPermissions(body && body.permissions);
   return { name, color, permissions };
 }
@@ -794,9 +803,14 @@ function getTlsCredentials() {
 }
 
 function start() {
-  const server = config.USE_HTTPS ? https.createServer(getTlsCredentials(), app) : http.createServer(app);
+  // Local https: we make the (self-signed) certificate ourselves. On Render the proxy
+  // already terminates https, so this program must speak plain http there.
+  const server = config.SERVE_TLS ? https.createServer(getTlsCredentials(), app) : http.createServer(app);
   server.requestTimeout = 0; // big uploads over a slow network are fine
-  server.headersTimeout = 60000;
+  // Keep idle connections open longer than any proxy does, otherwise the proxy
+  // sometimes reuses a connection we just closed and the visitor sees a 502.
+  server.keepAliveTimeout = 120000;
+  server.headersTimeout = 125000;
 
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') console.error('\nPort ' + config.PORT + ' is already in use. Is the server already running? Close it, or change PORT in .env.\n');
@@ -805,16 +819,15 @@ function start() {
     process.exit(1);
   });
 
-  // Use process.env.PORT provided by Render, fallback to config.PORT
-  const portToListen = process.env.PORT || config.PORT;
-
-  server.listen(portToListen, '0.0.0.0', () => {
+  server.listen(config.PORT, '0.0.0.0', () => {
     const line = '='.repeat(64);
+    console.log(`Server running on port ${config.PORT}`);
     console.log('\n' + line);
     console.log(' Zarzis Portes - Shared Room is running');
     console.log(line);
     console.log(' Staff address (share this one):  ' + config.BASE_URL);
     console.log(' Google redirect URI to register: ' + config.REDIRECT_URI);
+    console.log(' Mode:                            ' + (config.BEHIND_PROXY ? 'behind a proxy (plain http inside, https outside)' : config.SERVE_TLS ? 'https with a self-signed certificate' : 'plain http'));
     console.log(' This computer\'s network address: ' + (config.lanAddresses().join(', ') || '(none found)'));
     console.log(' Files are stored in:             ' + config.FILES_DIR);
     if (!config.GOOGLE_CLIENT_ID || !config.GOOGLE_CLIENT_SECRET) {
