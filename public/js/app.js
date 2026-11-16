@@ -12,6 +12,8 @@
     cancelled: 'Sign-in was cancelled. Press the button to try again.',
     state: 'The sign-in took too long or was interrupted. Please try again.',
     google: 'Google could not sign you in. Please try again in a moment.',
+    banned: 'This e-mail address has been banned from the room. Ask the Chief if you think this is a mistake.',
+    kicked: 'You were removed from the room. You can sign in again to rejoin.',
     not_configured: 'The server has no Google sign-in details yet. Your administrator needs to finish the setup (see README).',
   };
 
@@ -137,12 +139,13 @@
       state.files = data.files;
       state.roles = data.roles || [];
       state.members = data.members || [];
+      state.bans = data.bans || [];
       state.access = data.access || state.access;
       view.activity = data.activity;
       view.totalActivity = data.totalActivity;
       render();
     } catch (err) {
-      if (err.status === 401) showLogin();
+      if (err.status === 401) showLogin(err.code === 'banned' || err.code === 'kicked' ? err.code : undefined);
       else if (err.code === 'nickname_required') openNickname(true);
       // network hiccups are ignored: the next poll retries
     } finally {
@@ -176,6 +179,26 @@
     else if (f.previewable && p.view) openPreview(f);
     else if (p.download) window.location.href = contentUrl(f.name, true);
     else toast('Your role is not allowed to open or download this file.', true);
+  }
+
+  // The "⋯" button next to a file: Rename / Access / Delete live in a small pop-up menu.
+  function closeMenus() { document.querySelectorAll('.fmenu.open').forEach((m) => m.classList.remove('open')); }
+  document.addEventListener('click', (e) => { if (!e.target.closest('.fmenu')) closeMenus(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenus(); });
+  function moreMenu(items) {
+    if (!items.length) return null;
+    const wrap = h('div', { class: 'fmenu' });
+    const toggle = h('button', { class: 'btn small ghost fmenu-btn', type: 'button', title: 'More', 'aria-label': 'More actions', 'aria-haspopup': 'menu', text: '⋯' });
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const was = wrap.classList.contains('open');
+      closeMenus();
+      wrap.classList.toggle('open', !was);
+    });
+    const list = h('div', { class: 'fmenu-list', role: 'menu' }, ...items.map((it) =>
+      h('button', { class: 'fmenu-item' + (it.danger ? ' danger' : ''), type: 'button', role: 'menuitem', onclick: () => { closeMenus(); it.run(); } }, h('i', { text: it.icon }), it.label)));
+    wrap.append(toggle, list);
+    return wrap;
   }
 
   function renderFiles() {
@@ -212,9 +235,11 @@
           f.editKind && p.view ? h('button', { class: 'btn small', type: 'button', text: f.canEdit ? 'Edit' : 'Open', onclick: () => ZP.editor.open(f.name) }) : null,
           !f.editKind && f.previewable && p.view ? h('button', { class: 'btn small', type: 'button', text: 'View', onclick: () => openPreview(f) }) : null,
           p.download ? h('a', { class: 'btn small ghost', href: contentUrl(f.name, true), text: 'Download' }) : null,
-          state.access.isChief ? h('button', { class: 'btn small ghost', type: 'button', text: 'Access', onclick: () => openAccess(f) }) : null,
-          f.canEdit ? h('button', { class: 'btn small ghost', type: 'button', text: 'Rename', onclick: () => openRename(f) }) : null,
-          f.canDelete ? h('button', { class: 'btn small ghost', type: 'button', text: 'Delete', onclick: () => askDelete(f) }) : null
+          moreMenu([
+            f.canEdit ? { label: 'Rename', icon: '✎', run: () => openRename(f) } : null,
+            state.access.isChief ? { label: 'Who can edit…', icon: '🔒', run: () => openAccess(f) } : null,
+            f.canDelete ? { label: 'Delete', icon: '🗑', danger: true, run: () => askDelete(f) } : null,
+          ].filter(Boolean))
         );
 
         return h('li', { class: 'file' + (changed ? ' flash' : '') }, h('div', { class: 'ficon ' + kind.cls, text: kind.label }), h('div', { class: 'finfo' }, nameEl, meta), actions);

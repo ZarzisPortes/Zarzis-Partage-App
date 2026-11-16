@@ -60,7 +60,10 @@
         <section class="side-card">
           <div class="side-head">
             <h2>People in the room</h2>
-            <button id="btn-admin" class="btn small hidden" type="button">Manage roles</button>
+            <div class="head-actions">
+              <button id="btn-bans" class="btn small ghost hidden" type="button">Bans</button>
+              <button id="btn-admin" class="btn small hidden" type="button">Manage roles</button>
+            </div>
           </div>
           <div id="members" class="members"></div>
         </section>
@@ -218,8 +221,35 @@
   <dialog id="assign-dialog" class="dialog">
     <h2 id="assign-title">Roles</h2>
     <p id="assign-sub"></p>
-    <div id="assign-roles" class="checks stack"></div>
+    <div id="assign-roles-wrap">
+      <div class="section-label">Roles</div>
+      <div id="assign-roles" class="checks stack"></div>
+    </div>
+    <div id="assign-mod" class="mod-box hidden">
+      <div class="section-label">Moderation</div>
+      <p id="assign-mod-note" class="hint"></p>
+      <button id="mod-kick" class="btn small danger-soft" type="button">Kick from the room</button>
+      <div class="mod-ban">
+        <input id="mod-reason" class="text-input" type="text" maxlength="200" placeholder="Reason for the ban (optional)" autocomplete="off">
+        <button id="mod-ban" class="btn small danger" type="button">Ban e-mail</button>
+      </div>
+    </div>
     <div class="dialog-actions"><button id="assign-close" class="btn" type="button">Done</button></div>
+  </dialog>
+
+  <dialog id="bans-dialog" class="dialog wide">
+    <div class="preview-head">
+      <strong>Banned e-mail addresses</strong>
+      <button id="bans-close" class="btn small ghost" type="button">Close</button>
+    </div>
+    <p class="hint">A banned address cannot sign in. Lifting a ban lets the person sign in again as a new member.</p>
+    <form id="bans-form" class="mod-ban" autocomplete="off">
+      <input id="bans-email" class="text-input" type="email" placeholder="e-mail address to ban" required>
+      <input id="bans-reason" class="text-input" type="text" maxlength="200" placeholder="Reason (optional)">
+      <button class="btn small danger" type="submit">Ban</button>
+    </form>
+    <div id="bans-empty" class="empty hidden">Nobody is banned.</div>
+    <ul id="bans-list" class="files trash-list"></ul>
   </dialog>
 
   <dialog id="access-dialog" class="dialog">

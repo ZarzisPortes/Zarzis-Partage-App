@@ -103,5 +103,39 @@ assert.deepStrictEqual(oldDb.getUser('a@b.c').roles, []);
 assert.strictEqual(oldDb.hasChief([]), false);
 assert.strictEqual(oldDb.hasChief(['boss@gmail.com']), true);
 
+// ---- kick / ban powers
+{
+  const roles = P.defaultRoles();
+  roles.mod = { id: 'mod', name: 'Mod', color: '#7c3aed', permissions: P.cleanPermissions({ view: true, kick: true }) };
+  roles.head = { id: 'head', name: 'Head', color: '#d97706', permissions: P.cleanPermissions({ view: true, kick: true, ban: true }) };
+  const chiefEmails = ['boss@gmail.com'];
+  const u = (email, rs) => ({ email, roles: rs || [] });
+  const check = (actor, target, action, targetUser) => P.moderationDenied({ actorCtx: P.buildContext(actor, roles, chiefEmails), actorEmail: actor.email, targetEmail: target, targetUser: targetUser === undefined ? u(target) : targetUser, roles, chiefEmails, action });
+
+  assert.strictEqual(roles.member.permissions.kick, false, 'Member can not kick by default');
+  assert.strictEqual(roles.member.permissions.ban, false, 'Member can not ban by default');
+  assert.ok(check(u('x@a.b'), 'y@a.b', 'kick'), 'plain member cannot kick');
+  assert.strictEqual(check(u('m@a.b', ['mod']), 'y@a.b', 'kick'), null, 'moderator can kick a member');
+  assert.ok(check(u('m@a.b', ['mod']), 'y@a.b', 'ban'), 'kick-only moderator cannot ban');
+  assert.ok(check(u('m@a.b', ['mod']), 'm@a.b', 'kick'), 'cannot kick yourself');
+  assert.ok(check(u('m@a.b', ['mod']), 'boss@gmail.com', 'kick'), 'cannot kick the .env Chief');
+  assert.ok(check(u('boss@gmail.com'), 'boss@gmail.com', 'kick'), 'even the Chief cannot kick themselves');
+  assert.ok(check(u('m@a.b', ['mod']), 'h@a.b', 'kick', u('h@a.b', ['head'])), 'moderator cannot kick another moderator');
+  assert.ok(check(u('m@a.b', ['mod']), 'c@a.b', 'kick', u('c@a.b', ['chief'])), 'moderator cannot kick a Chief role');
+  assert.strictEqual(check(u('boss@gmail.com'), 'h@a.b', 'ban', u('h@a.b', ['head'])), null, 'Chief can ban a head moderator');
+  assert.strictEqual(check(u('h@a.b', ['head']), 'new@person.com', 'ban', null), null, 'ban of an address that never signed in');
+  assert.deepStrictEqual(P.cleanPermissions({ kick: 1 }), { view: false, download: false, upload: false, edit: false, delete: false, kick: true, ban: false });
+
+  // old databases: existing custom roles keep file rights but never gain kick/ban
+  const oldRoles = path.join(dir, 'oldroles.json');
+  fs.writeFileSync(oldRoles, JSON.stringify({ rev: 1, nextActivityId: 1, users: {}, files: {}, activity: [], roles: { r1: { id: 'r1', name: 'Acc', color: '#000', permissions: { view: true, download: true, upload: true, edit: true, delete: false } } } }));
+  const migrated = new Store(oldRoles);
+  assert.strictEqual(migrated.data.roles.r1.permissions.kick, false);
+  assert.strictEqual(migrated.data.roles.r1.permissions.ban, false);
+  assert.strictEqual(migrated.data.roles.r1.permissions.edit, true);
+  assert.strictEqual(migrated.data.roles.chief.permissions.ban, true);
+  assert.strictEqual(migrated.isBanned('A@B.c'), false);
+}
+
 fs.rmSync(dir, { recursive: true, force: true });
 console.log('All tests passed.');

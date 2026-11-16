@@ -6,12 +6,12 @@
 
 const fs = require('fs');
 const path = require('path');
-const { defaultRoles, CHIEF_ID, PERMISSIONS } = require('./permissions');
+const { defaultRoles, CHIEF_ID, PERMISSIONS, MOD_PERMISSIONS } = require('./permissions');
 
 class Store {
   constructor(file) {
     this.file = file;
-    this.data = { rev: 1, nextActivityId: 1, users: {}, files: {}, activity: [], roles: defaultRoles() };
+    this.data = { rev: 1, nextActivityId: 1, users: {}, files: {}, activity: [], roles: defaultRoles(), banned: {}, kicked: {} };
     fs.mkdirSync(path.dirname(file), { recursive: true });
     if (fs.existsSync(file)) {
       let parsed;
@@ -32,8 +32,11 @@ class Store {
       // Roles saved before "view" and "download" existed keep full access to those.
       for (const r of Object.values(this.data.roles)) {
         r.permissions = r.permissions || {};
-        for (const p of PERMISSIONS) if (r.permissions[p] === undefined) r.permissions[p] = true;
+        // Older roles keep full file access, but NEVER get kick/ban by themselves.
+        for (const p of PERMISSIONS) if (r.permissions[p] === undefined) r.permissions[p] = !MOD_PERMISSIONS.includes(p);
       }
+      this.data.banned = this.data.banned || {};
+      this.data.kicked = this.data.kicked || {};
       this.save();
     } else {
       this.save();
@@ -80,6 +83,14 @@ class Store {
     this.data.users[key] = user;
     this.save();
     return user;
+  }
+
+  isBanned(email) {
+    return !!(this.data.banned && this.data.banned[String(email).toLowerCase()]);
+  }
+
+  removeUser(email) {
+    delete this.data.users[String(email).toLowerCase()];
   }
 
   setNickname(email, nickname) {

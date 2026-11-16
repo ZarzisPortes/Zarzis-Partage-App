@@ -88,6 +88,12 @@ function createAuth({ config, db }) {
         return res.redirect('/?error=not_allowed');
       }
 
+      if (db.isBanned(email)) {
+        console.warn('Sign-in refused (banned):', email);
+        req.session = null;
+        return res.redirect('/?error=banned');
+      }
+      if (db.data.kicked) delete db.data.kicked[email]; // coming back after a kick is allowed
       const user = db.upsertLogin({ email, name: claims.name, picture: claims.picture });
       // If nobody has been made Chief yet (no CHIEF_EMAILS in .env), the first
       // person to sign in becomes Chief so the room is never left without one.
@@ -117,8 +123,13 @@ function createAuth({ config, db }) {
   }
 
   function requireAuth(req, res, next) {
+    const sessionEmail = String((req.session && req.session.email) || '').toLowerCase();
+    if (sessionEmail && db.isBanned(sessionEmail)) return res.status(401).json({ error: 'banned' });
     const user = currentUser(req);
-    if (!user) return res.status(401).json({ error: 'not_signed_in' });
+    if (!user) {
+      const kicked = sessionEmail && db.data.kicked && db.data.kicked[sessionEmail];
+      return res.status(401).json({ error: kicked ? 'kicked' : 'not_signed_in' });
+    }
     req.user = user;
     req.ctx = buildContext(user, db.data.roles, config.CHIEF_EMAILS);
     next();

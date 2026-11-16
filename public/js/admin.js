@@ -1,7 +1,7 @@
 // Roles and people dialog (Chief only): create roles, choose what each role may do.
 (() => {
   'use strict';
-  const { $, h, api, toast, roleChip, PERM_LABELS } = ZP;
+  const { $, h, api, toast, roleChip, PERM_LABELS, FILE_PERMS, MOD_PERMS } = ZP;
 
   // -------------------------------------------- roles and people (Chief)
   let adminTab = 'members';
@@ -74,10 +74,12 @@
     const color = h('input', { type: 'color', value: role ? role.color : '#e8b830', disabled: builtin ? 'disabled' : false, title: 'Role colour' });
     const checks = {};
     const permBoxes = Object.entries(PERM_LABELS).map(([key, label]) => {
-      const on = role ? role.permissions[key] : key !== 'delete';
+      const on = role ? role.permissions[key] : !['delete', 'kick', 'ban'].includes(key);
       checks[key] = h('input', { type: 'checkbox', checked: on ? 'checked' : false, disabled: role && role.id === 'chief' ? 'disabled' : false });
-      return h('label', { class: 'check' }, checks[key], label);
+      return h('label', { class: 'check' + (MOD_PERMS.includes(key) ? ' mod' : '') }, checks[key], label);
     });
+    const fileBoxes = permBoxes.slice(0, FILE_PERMS.length);
+    const modBoxes = permBoxes.slice(FILE_PERMS.length);
     const save = h('button', { class: 'btn small', type: 'button', text: isNew ? 'Create role' : 'Save changes' });
     const actions = [save];
     if (role && !builtin) {
@@ -103,7 +105,10 @@
     return h('div', { class: 'role-card' }, h('div', { class: 'role-form' },
       role ? roleChip(role) : h('strong', { text: 'New role' }),
       h('div', { class: 'role-row' }, name, color),
-      h('div', { class: 'checks' }, permBoxes), lockedNote, memberNote,
+      h('div', { class: 'section-label' }, 'Files'),
+      h('div', { class: 'checks' }, fileBoxes),
+      h('div', { class: 'section-label' }, 'Moderation'),
+      h('div', { class: 'checks' }, modBoxes), lockedNote, memberNote,
       role && role.id === 'chief' ? null : h('div', { class: 'role-actions' }, actions)));
   }
 

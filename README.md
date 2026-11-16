@@ -125,8 +125,16 @@ The Chief can also make other people Chief. Only the Chief sees the **Manage rol
 Below it, everybody in the room grouped by their highest role (Chief first), with a green dot for people online now.
 **The Chief clicks a name** to tick or untick roles for that person – saved immediately.
 
-**Each role has five switches:** **View files**, **Download files**, **Add new files**, **Modify files** (edit in the app / replace),
-**Delete files**. Create roles and colours under *Manage roles → Roles*.
+**Each role has switches for:** **View files**, **Download files**, **Add new files**, **Modify files** (edit in the app / replace),
+**Delete files**, and the two moderation powers below. Create roles and colours under *Manage roles → Roles*.
+
+**Seven switches in total:** the five above plus two **moderation** powers, **Kick people out of the room** and **Ban e-mail addresses**. Nobody has them unless the Chief ticks them on a role (the Member role never has them by default).
+
+**Kick and ban.** Click a person in the left list (people with a kick/ban role see the same dialog as the Chief, without the role boxes).
+- **Kick** signs the person out at once and removes their nickname and roles. They may sign in again, like on Discord.
+- **Ban** does the same and also blocks the e-mail address from signing in. You can type a reason. The **Bans** button above the people list shows all banned addresses, lets you ban an address that never signed in, and **Lift ban**.
+- Protections: you cannot kick or ban yourself or a Chief set in `.env`; people who can kick/ban can only be kicked or banned by a Chief; only a Chief can act on another Chief.
+- Every kick, ban and lifted ban appears on the Scoreboard. A kicked or banned person sees a clear message on the sign-in page.
 
 **How permissions combine (same as Discord):**
 - Everybody is automatically a **Member**, and a person gets the **combined** powers of Member + all their other roles.

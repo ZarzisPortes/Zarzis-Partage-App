@@ -262,6 +262,10 @@ function publicMembers() {
 
 let editing = null;
 
+function publicBans() {
+  return Object.values(db.data.banned || {}).sort((a, b) => (a.ts < b.ts ? 1 : -1));
+}
+
 function publicRoles() {
   return Object.values(db.data.roles).map((r) => ({ id: r.id, name: r.name, color: r.color, builtin: !!r.builtin, permissions: r.permissions }));
 }
@@ -292,6 +296,7 @@ app.get('/api/state', requireNickname, (req, res) => {
     files: req.ctx.perms.view ? Object.values(db.data.files).map((f) => publicFile(f, req.ctx)) : [],
     roles: publicRoles(),
     access: accessInfo(req.ctx),
+    bans: req.ctx.chief || req.ctx.perms.ban ? publicBans() : [],
     activity,
     totalActivity: db.data.activity.length,
   });
@@ -482,6 +487,54 @@ app.delete('/api/chat/:id', requireNickname, (req, res) => {
   res.json({ ok: true });
 });
 
+
+// ------------------------------------------------------- kick and ban
+// Kick: the person is signed out at once and loses their nickname/roles; they may sign in again.
+// Ban : the e-mail address can no longer sign in at all until somebody lifts the ban.
+function dropPerson(email) {
+  db.removeUser(email);
+  presence.delete(email);
+}
+
+app.post('/api/members/:email/kick', requireNickname, (req, res) => {
+  const email = String(req.params.email || '').toLowerCase();
+  const target = db.getUser(email);
+  if (!target) return res.status(404).json({ error: 'This person is not in the room any more.' });
+  const why = perms.moderationDenied({ actorCtx: req.ctx, actorEmail: req.user.email, targetEmail: email, targetUser: target, roles: db.data.roles, chiefEmails: config.CHIEF_EMAILS, action: 'kick' });
+  if (why) return res.status(403).json({ error: why });
+  const label = (target.nickname || target.name || email) + ' (' + email + ')';
+  dropPerson(email);
+  db.data.kicked[email] = { by: req.user.nickname, ts: new Date().toISOString() };
+  db.addActivity({ email: req.user.email, nickname: req.user.nickname, action: 'Kicked', file: '', detail: label + ' was removed from the room' });
+  db.commit();
+  res.json({ ok: true });
+});
+
+app.post('/api/bans', requireNickname, express.json({ limit: '10kb' }), (req, res) => {
+  const email = String((req.body && req.body.email) || '').trim().toLowerCase();
+  const reason = String((req.body && req.body.reason) || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: 'Please type a full e-mail address.' });
+  const target = db.getUser(email);
+  const why = perms.moderationDenied({ actorCtx: req.ctx, actorEmail: req.user.email, targetEmail: email, targetUser: target, roles: db.data.roles, chiefEmails: config.CHIEF_EMAILS, action: 'ban' });
+  if (why) return res.status(403).json({ error: why });
+  if (db.isBanned(email)) return res.status(409).json({ error: email + ' is already banned.' });
+  const label = target ? (target.nickname || target.name || email) + ' (' + email + ')' : email;
+  if (target) dropPerson(email);
+  db.data.banned[email] = { email, nickname: target ? target.nickname : '', reason, by: req.user.nickname, byEmail: req.user.email, ts: new Date().toISOString() };
+  db.addActivity({ email: req.user.email, nickname: req.user.nickname, action: 'Banned', file: '', detail: label + (reason ? ' - ' + reason : '') });
+  db.commit();
+  res.json({ ok: true });
+});
+
+app.delete('/api/bans/:email', requireNickname, (req, res) => {
+  if (!req.ctx.chief && !req.ctx.perms.ban) return res.status(403).json({ error: 'Your role is not allowed to lift bans.' });
+  const email = String(req.params.email || '').toLowerCase();
+  if (!db.isBanned(email)) return res.status(404).json({ error: 'That address is not banned.' });
+  delete db.data.banned[email];
+  db.addActivity({ email: req.user.email, nickname: req.user.nickname, action: 'Unbanned', file: '', detail: email + ' may sign in again' });
+  db.commit();
+  res.json({ ok: true });
+});
 
 // --------------------------------------------------------------- rename
 app.put('/api/files/:name/rename', requireNickname, express.json({ limit: '10kb' }), async (req, res) => {

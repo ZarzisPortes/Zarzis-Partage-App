@@ -92,7 +92,12 @@ window.ZP = (() => {
     upload: 'Add new files',
     edit: 'Modify files',
     delete: 'Delete files',
+    kick: 'Kick people out of the room',
+    ban: 'Ban e-mail addresses',
   };
+  const PERM_SHORT = { view: 'view', download: 'download', upload: 'add', edit: 'modify', delete: 'delete', kick: 'kick', ban: 'ban' };
+  const FILE_PERMS = ['view', 'download', 'upload', 'edit', 'delete'];
+  const MOD_PERMS = ['kick', 'ban'];
 
   function roleChip(role) {
     return h('span', { class: 'chip' }, h('i', { class: 'dot', style: 'background:' + role.color }), role.name);
@@ -109,5 +114,5 @@ window.ZP = (() => {
     access: { isChief: false, roleIds: ['member'], permissions: { view: true, download: true, upload: true, edit: true, delete: true } },
   };
 
-  return { $, h, api, toast, formatDate, formatSize, fileKind, contentUrl, PERM_LABELS, roleChip, state, editors: {} };
+  return { $, h, api, toast, formatDate, formatSize, fileKind, contentUrl, PERM_LABELS, PERM_SHORT, FILE_PERMS, MOD_PERMS, roleChip, state, editors: {} };
 })();
