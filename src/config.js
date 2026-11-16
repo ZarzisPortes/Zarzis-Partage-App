@@ -1,4 +1,4 @@
-'use strict';
+use strict';
 const path = require('path');
 const os = require('os');
 
@@ -24,6 +24,7 @@ module.exports = {
   MAX_UPLOAD_BYTES: (parseInt(process.env.MAX_UPLOAD_MB, 10) || 200) * 1024 * 1024,
   TRASH_DAYS: process.env.TRASH_DAYS !== undefined ? parseInt(process.env.TRASH_DAYS, 10) : 30,
   DATA_DIR,
+  PUBLIC_DIR: path.join(process.cwd(), 'public'),
   FILES_DIR: path.join(DATA_DIR, 'shared-files'),
   TRASH_DIR: path.join(DATA_DIR, 'trash'),
   TMP_DIR: path.join(DATA_DIR, 'tmp'),
