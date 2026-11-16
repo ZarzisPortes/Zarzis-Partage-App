@@ -175,7 +175,7 @@ app.disable('x-powered-by');
 // Behind Render's proxy the browser talks https to the proxy and the proxy talks
 // plain http to us. Trusting it lets Express (and the secure session cookie)
 // see the original https request via X-Forwarded-Proto.
-if (config.BEHIND_PROXY) app.set('trust proxy', 1);
+app.set('trust proxy', 1);
 
 // Health check for Render (and anyone else): no sign-in, no redirects, no cookies.
 app.get('/healthz', (req, res) => res.type('text/plain').send('ok'));
